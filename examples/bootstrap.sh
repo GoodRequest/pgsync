@@ -14,13 +14,13 @@ if [ ! -d "$(pwd)/examples/$@" ]; then
 fi
 
 read -p "Are you sure you want to delete the '$@' Elasticsearch index? [y/N] " -n 1 -r
-echo 
+echo
 if [[ ! $REPLY =~ ^[Yy]$ ]]
 then
   exit 1
 fi
 
-curl -X DELETE http://localhost:9200/$@
+curl -X DELETE http://localhost:9201/$@
 
 if [ -f "examples/$@/schema.py" ]; then
   python examples/$@/schema.py --config "$(pwd)/examples/$@/schema.json"
