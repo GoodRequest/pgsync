@@ -2,143 +2,167 @@
 	{
 		"database": "shop",
 		"index": "products",
-		"nodes": [
-			{
-				"table": "products",
-				"label": "products",
-				"schema": "public",
-				"columns": [
-					"id"
-				],
-				"children": [
-					{
-						"table": "product_categories",
-						"label": "productCategory",
-						"columns": [
-							"id"
-						],
-						"relationship": {
-							"variant": "object",
-							"type": "one_to_one"
-						},
-						"children": [
-							{
-								"table": "service_product_category_sellers",
-								"label": "saleServices",
-								"columns": [
-									"productCategoryID",
-									"sellerID",
-									"serviceID"
-								],
-								"relationship": {
-									"variant": "object",
-									"type": "one_to_many"
-								},
-								"children": [
-									{
-										"table": "sellers",
-										"label": "seller",
-										"columns": [
-											"id"
-										],
-										"relationship": {
-											"variant": "object",
-											"type": "one_to_one"
-										}
-									},
-									{
-										"table": "services",
-										"label": "service",
-										"columns": [
-											"id",
-											"name"
-										],
-										"relationship": {
-											"variant": "object",
-											"type": "one_to_one"
-										},
-										"children": [
-                                            {
-                                                "table": "service_items",
-                                                "label": "serviceItems",
-                                                "columns": [
-                                                    "id"
-                                                ],
-                                                "relationship": {
-                                                    "variant": "object",
-                                                    "type": "one_to_many"
-                                                }
-                                            }
-										]
-									}
-								]
+		"nodes": {
+			"table": "products",
+			"label": "products",
+			"schema": "public",
+			"columns": [
+				"id"
+			],
+			"children": [
+				{
+					"table": "product_categories",
+					"label": "productCategory",
+					"columns": [
+						"id"
+					],
+					"relationship": {
+						"variant": "object",
+						"type": "one_to_one"
+					},
+					"children": [
+						{
+							"table": "service_product_category_sellers",
+							"label": "saleServices",
+							"columns": [
+								"productCategoryID",
+								"sellerID",
+								"serviceID"
+							],
+							"relationship": {
+								"variant": "object",
+								"type": "one_to_many"
 							},
-							{
-								"table": "service_product_category_renters",
-								"label": "rentServices",
-								"columns": [
-									"productCategoryID",
-									"renterOneID",
-                                    "renterTwoID",
-									"serviceID"
-								],
-								"relationship": {
-									"variant": "object",
-									"type": "one_to_many"
-								},
-								"children": [
-									{
-										"table": "renters",
-										"label": "lineOne",
-										"columns": [
-											"id"
-										],
-										"relationship": {
-											"variant": "object",
-											"type": "one_to_one"
-                                        }
-                                    },
-									{
-										"table": "renters",
-										"label": "renterTwo",
-										"columns": [
-											"id"
-										],
-										"relationship": {
-											"variant": "object",
-											"type": "one_to_one"
-										}
-									},
-									{
-										"table": "services",
-										"label": "service",
-										"columns": [
-											"id"
-										],
-										"relationship": {
-											"variant": "object",
-											"type": "one_to_one"
-										},
-										"children": [
-											{
-												"table": "service_items",
-												"label": "serviceItems",
-												"columns": [
-													"id"
-												],
-												"relationship": {
-													"variant": "object",
-													"type": "one_to_many"
-												}
-											}
-										]
+							"children": [
+								{
+									"table": "sellers",
+									"label": "seller",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one"
 									}
-								]
-							}
-						]
-					}
-				]
-			}
-		]
+								},
+								{
+									"table": "services",
+									"label": "service",
+									"columns": [
+										"id",
+										"name"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one"
+									},
+									"children": [
+										{
+											"table": "service_items",
+											"label": "serviceItems",
+											"columns": [
+												"id"
+											],
+											"relationship": {
+												"variant": "object",
+												"type": "one_to_many"
+											},
+											"children": [
+												{
+													"table": "price_items",
+													"label": "priceItems",
+													"columns": [
+														"id"
+													],
+													"relationship": {
+														"variant": "object",
+														"type": "one_to_many"
+													}
+												}
+											]
+										}
+									]
+								}
+							]
+						},
+						{
+							"table": "service_product_category_renters",
+							"label": "rentServices",
+							"columns": [
+								"productCategoryID",
+								"renterOneID",
+								"renterTwoID",
+								"serviceID"
+							],
+							"relationship": {
+								"variant": "object",
+								"type": "one_to_many"
+							},
+							"children": [
+								{
+									"table": "renters",
+									"label": "lineOne",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one"
+									}
+								},
+								{
+									"table": "renters",
+									"label": "renterTwo",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one"
+									}
+								},
+								{
+									"table": "services",
+									"label": "service",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one"
+									},
+									"children": [
+										{
+											"table": "service_items",
+											"label": "serviceItems",
+											"columns": [
+												"id"
+											],
+											"relationship": {
+												"variant": "object",
+												"type": "one_to_many"
+											},
+											"children": [
+												{
+													"table": "price_items",
+													"label": "priceItems",
+													"columns": [
+														"id"
+													],
+													"relationship": {
+														"variant": "object",
+														"type": "one_to_many"
+													}
+												}
+											]
+										}
+									]
+								}
+							]
+						}
+					]
+				}
+			]
+		}
 	}
 ]

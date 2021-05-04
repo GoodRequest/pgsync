@@ -102,6 +102,17 @@ class ServiceItem(Base):
     )
 
 
+class PriceItem(Base):
+    __tablename__ = 'price_items'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+    serviceItemID = sa.Column(sa.Integer, sa.ForeignKey(ServiceItem.id), nullable=False)
+    serviceItem = sa.orm.relationship(
+        ServiceItem,
+        backref=sa.orm.backref('price_item_service_item'),
+    )
+
+
 def setup(config=None):
     for document in json.load(open(config)):
         database = document.get('database', document['index'])
