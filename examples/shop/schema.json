@@ -2,7 +2,7 @@
 	{
 		"database": "shop",
 		"index": "products",
-		"nodes": [
+		"nodes":
 			{
 				"table": "products",
 				"label": "products",
@@ -89,13 +89,17 @@
 								"children": [
 									{
 										"table": "renters",
-										"label": "lineOne",
+										"label": "renterOne",
 										"columns": [
 											"id"
 										],
 										"relationship": {
 											"variant": "object",
-											"type": "one_to_one"
+											"type": "one_to_one",
+                                            "foreign_key": {
+                                                "parent": ["renterOneID"],
+                                                "child": ["id"]
+                                            }
                                         }
                                     },
 									{
@@ -106,7 +110,11 @@
 										],
 										"relationship": {
 											"variant": "object",
-											"type": "one_to_one"
+											"type": "one_to_one",
+                                            "foreign_key": {
+                                                "parent": ["renterTwoID"],
+                                                "child": ["id"]
+                                            }
 										}
 									},
 									{
@@ -139,6 +147,5 @@
 					}
 				]
 			}
-		]
 	}
 ]

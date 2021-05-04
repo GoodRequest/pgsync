@@ -11,6 +11,12 @@ from pgsync.utils import get_config
 Base = declarative_base()
 
 
+class User(Base):
+    __tablename__ = 'users'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+
+
 class ProductCategory(Base):
     __tablename__ = 'product_categories'
     id = sa.Column(sa.Integer, primary_key=True)
@@ -63,6 +69,11 @@ class Renter(Base):
     __tablename__ = 'renters'
     id = sa.Column(sa.Integer, primary_key=True)
     name = sa.Column(sa.String, nullable=False)
+    createdBy = sa.Column(sa.Integer, sa.ForeignKey(User.id), nullable=False)
+    creator = sa.orm.relationship(
+        User,
+        backref=sa.orm.backref('renter_creator'),
+    )
 
 
 class ServiceProductCategoryRenter(Base):
@@ -99,6 +110,17 @@ class ServiceItem(Base):
     service = sa.orm.relationship(
         Service,
         backref=sa.orm.backref('service_item_service'),
+    )
+
+
+class PriceItem(Base):
+    __tablename__ = 'service_items'
+    id = sa.Column(sa.Integer, primary_key=True)
+    name = sa.Column(sa.String, nullable=False)
+    serviceItemID = sa.Column(sa.Integer, sa.ForeignKey(ServiceItem.id), nullable=False)
+    serviceItem = sa.orm.relationship(
+        ServiceItem,
+        backref=sa.orm.backref('price_item_service_item'),
     )
 
 

@@ -1,7 +1,7 @@
 import json
 
 import click
-from schema import Product, ProductCategory, Seller, Renter, Service, ServiceItem, ServiceProductCategorySeller, ServiceProductCategoryRenter
+from schema import Product, ProductCategory, Seller, Renter, Service, ServiceItem, ServiceProductCategorySeller, ServiceProductCategoryRenter, User
 from sqlalchemy.orm import sessionmaker
 
 from pgsync.base import pg_engine, subtransactions
@@ -26,6 +26,15 @@ def main(config):
     )
     Session = sessionmaker(bind=engine, autoflush=True)
     session = Session()
+
+    users = {
+        'user1': User(id=1, name='user1'),
+        'user2': User(id=2, name='user2'),
+        'user3': User(id=3, name='user3'),
+        'user4': User(id=4, name='user4')
+    }
+    with subtransactions(session):
+        session.add_all(users.values())
 
     product_categories = {
         'productCategory1': ProductCategory(id=1, name='productCategory1'),
@@ -77,10 +86,10 @@ def main(config):
         session.add_all(sellers.values())
 
     renters = {
-        'renter1': Renter(id=1, name='renter1'),
-        'renter2': Renter(id=2, name='renter2'),
-        'renter3': Renter(id=3, name='renter3'),
-        'renter4': Renter(id=4, name='renter4')
+        'renter1': Renter(id=1, name='renter1', creator=users['user1']),
+        'renter2': Renter(id=2, name='renter2', creator=users['user2']),
+        'renter3': Renter(id=3, name='renter3', creator=users['user3']),
+        'renter4': Renter(id=4, name='renter4', creator=users['user4'])
     }
     with subtransactions(session):
         session.add_all(renters.values())
