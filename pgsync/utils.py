@@ -191,3 +191,11 @@ def get_config(config=None):
     if not os.path.exists(config):
         raise IOError(f'Schema config "{config}" not found')
     return config
+
+
+def find_filters(current_node):
+    for child in current_node.children:
+        if child._filters and len(child._filters) > 0:
+            return child
+        elif len(child.children) > 0:
+            return find_filters(child)

@@ -5,6 +5,7 @@ from .base import compiled_query, get_foreign_keys
 from .constants import OBJECT, ONE_TO_MANY, ONE_TO_ONE, SCALAR
 from .exc import FetchColumnForeignKeysError
 from .node import node_from_table
+from .utils import find_filters
 
 
 class QueryBuilder(object):
@@ -661,7 +662,16 @@ class QueryBuilder(object):
                                             ) == column.value
                                         )
 
-            isouter = len(child.parent.children) > 1
+            #isouter = len(child.parent.children) > 1
+
+            if len(child.parent.children) == 1:
+                isouter = self.isouter
+            elif len(child.parent.children) > 1:
+                child_with_filters = find_filters(child)
+                if child_with_filters:
+                    isouter = False
+                else:
+                    isouter = self.isouter
 
             from_obj = from_obj.join(
                 child._subquery,
