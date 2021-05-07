@@ -1,6 +1,6 @@
 [
 	{
-		"database": "shop",
+		"database": "shop2",
 		"index": "products",
 		"nodes": {
 			"table": "products",
@@ -26,12 +26,15 @@
 					},
 					"children": [
 						{
-							"table": "service_product_category_sellers",
-							"label": "saleServices",
+							"table": "service_product_categories",
+							"label": "serviceProductCategories",
 							"columns": [
 								"productCategoryID",
 								"sellerID",
-								"serviceID"
+								"sellerServiceID",
+                                "renterOneID",
+								"renterTwoID",
+								"renterServiceID"
 							],
 							"relationship": {
 								"variant": "object",
@@ -59,7 +62,7 @@
 								},
 								{
 									"table": "services",
-									"label": "service",
+									"label": "saleService",
 									"columns": [
 										"id",
 										"name"
@@ -68,7 +71,7 @@
 										"variant": "object",
 										"type": "one_to_one",
                                         "foreign_key": {
-                                            "parent": ["serviceID"],
+                                            "parent": ["sellerServiceID"],
                                             "child": ["id"]
                                         }
 									},
@@ -108,28 +111,8 @@
                                             ]
                                         }
                                     ]
-								}
-							]
-						},
-						{
-							"table": "service_product_category_renters",
-							"label": "rentServices",
-							"columns": [
-								"productCategoryID",
-								"renterOneID",
-								"renterTwoID",
-								"serviceID"
-							],
-							"relationship": {
-								"variant": "object",
-								"type": "one_to_many",
-                                "foreign_key": {
-                                    "parent": ["id"],
-                                    "child": ["productCategoryID"]
-                                }
-							},
-							"children": [
-								{
+								},
+                                {
 									"table": "renters",
 									"label": "renterOne",
 									"columns": [
@@ -161,7 +144,7 @@
 								},
 								{
 									"table": "services",
-									"label": "service",
+									"label": "renterService",
 									"columns": [
 										"id"
 									],
@@ -169,7 +152,7 @@
 										"variant": "object",
 										"type": "one_to_one",
                                         "foreign_key": {
-                                            "parent": ["serviceID"],
+                                            "parent": ["renterServiceID"],
                                             "child": ["id"]
                                         }
 									},

@@ -611,7 +611,6 @@ class Base(object):
                     schema,
                     tables,
                     views,
-                    user_defined_fkey_tables,
                 ),
             )
         )
