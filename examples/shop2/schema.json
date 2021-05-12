@@ -42,8 +42,9 @@
                                 "foreign_key": {
                                     "parent": ["id"],
                                     "child": ["productCategoryID"]
-                                }
-							},
+                                },
+                                "test": true
+                            },
 							"children": [
 								{
 									"table": "sellers",
