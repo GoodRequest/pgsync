@@ -1,5 +1,6 @@
 """PGSync QueryBuilder."""
 import sqlalchemy as sa
+import sqlalchemy.sql.expression
 
 from .base import compiled_query, get_foreign_keys
 from .constants import OBJECT, ONE_TO_MANY, ONE_TO_ONE, SCALAR
@@ -601,8 +602,9 @@ class QueryBuilder(object):
 
         from_obj = None
 
-        for child in node.children:
+        children_with_conditions = []
 
+        for child in node.children:
             onclause = []
 
             foreign_keys = self._get_foreign_keys(node, child)
@@ -662,16 +664,17 @@ class QueryBuilder(object):
                                             ) == column.value
                                         )
 
-            #isouter = len(child.parent.children) > 1
+            child_with_filters = find_filters(child)
+            if node.relationship.test is True:
+                if len(node._filters) == 0:
 
-            if len(child.parent.children) == 1:
-                isouter = self.isouter
-            elif len(child.parent.children) > 1:
-                child_with_filters = find_filters(child)
-                if child_with_filters:
-                    isouter = False
-                else:
-                    isouter = self.isouter
+                    if child_with_filters is not None:
+                        children_with_conditions.append(child)
+
+            if (child_with_filters is not None or len(child._filters) > 0) and node.relationship.test is not True:
+                isouter = False
+            else:
+                isouter = True
 
             from_obj = from_obj.join(
                 child._subquery,
@@ -778,7 +781,41 @@ class QueryBuilder(object):
                 from_obj
             )
 
-        if node._filters:
+        sqlalchemy.sql.expression.or_()
+
+        if node.relationship.test == True:
+            if node._filters:
+                current_foreign_key = None
+                for f_key in node._filters[0].left.foreign_keys:
+                    current_foreign_key = f_key
+                    break
+
+                same_foreign_keys = []
+                for foreign_key in node._filters[0].left.table.foreign_keys:
+                    if foreign_key.target_fullname == current_foreign_key.target_fullname:
+                        same_foreign_keys.append(
+                            sqlalchemy.sql.column(foreign_key.parent.name) == node._filters[0].right.value
+                        )
+
+                node._subquery = node._subquery.where(
+                    sa.or_(*same_foreign_keys)
+                )
+            elif len(children_with_conditions) > 0:
+                children_with_conditions_queries = []
+                for child_with_condition in children_with_conditions:
+                    child_with_condition._subquery = child_with_condition._subquery.element.where(
+                        sqlalchemy.sql.column(child_with_condition.relationship.foreign_key.parent[0]) == sqlalchemy.sql.column(child_with_condition.relationship.foreign_key.child[0])
+                    )
+
+                    children_with_conditions_queries.append(
+                        sqlalchemy.exists(child_with_condition._subquery)
+                    )
+
+                node._subquery = node._subquery.where(
+                    sa.or_(*children_with_conditions_queries)
+                )
+
+        if node._filters and node.relationship.test is not True:
             node._subquery = node._subquery.where(
                 sa.and_(*node._filters)
             )

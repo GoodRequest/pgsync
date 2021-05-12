@@ -194,6 +194,9 @@ def get_config(config=None):
 
 
 def find_filters(current_node):
+    if len(current_node._filters) > 0:
+        return current_node
+
     for child in current_node.children:
         if child._filters and len(child._filters) > 0:
             return child
