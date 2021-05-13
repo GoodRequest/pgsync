@@ -6,7 +6,7 @@ from .base import compiled_query, get_foreign_keys
 from .constants import OBJECT, ONE_TO_MANY, ONE_TO_ONE, SCALAR
 from .exc import FetchColumnForeignKeysError
 from .node import node_from_table
-from .utils import find_filters
+from .utils import find_filters, has_test_parent, change_chidlren_to_inner_joins
 
 
 class QueryBuilder(object):
@@ -599,10 +599,15 @@ class QueryBuilder(object):
         node._subquery = subquery.alias()
 
     def _non_through(self, node):  # noqa: C901
-
         from_obj = None
+        custom_from_obj = None
 
         children_with_conditions = []
+
+        if (node.relationship.test is True):
+            print('')
+
+        parent_with_test = has_test_parent(node)
 
         for child in node.children:
             onclause = []
@@ -664,6 +669,7 @@ class QueryBuilder(object):
                                             ) == column.value
                                         )
 
+            # TODO: presunut dole
             child_with_filters = find_filters(child)
             if node.relationship.test is True:
                 if len(node._filters) == 0:
@@ -672,15 +678,31 @@ class QueryBuilder(object):
                         children_with_conditions.append(child)
 
             if (child_with_filters is not None or len(child._filters) > 0) and node.relationship.test is not True:
-                isouter = False
+                custom_is_outer = False
             else:
-                isouter = True
+                custom_is_outer = True
 
+            if parent_with_test is not None:
+                 isouter = True
+            else:
+                isouter = custom_is_outer
+
+            #TODO: rekurzivne zistit, ci ma niektory parent nastaveny test flag. ak ano, nastavit isouter = True
             from_obj = from_obj.join(
                 child._subquery,
                 onclause=sa.and_(*onclause),
                 isouter=isouter,
             )
+
+            if parent_with_test is not None:
+                if custom_from_obj is None:
+                    custom_from_obj = node.model
+
+                custom_from_obj = custom_from_obj.join(
+                    child._custom_subquery,
+                    onclause=sa.and_(*onclause),
+                    isouter=custom_is_outer,
+                )
 
         foreign_keys = get_foreign_keys(node.parent, node)
 
@@ -775,50 +797,91 @@ class QueryBuilder(object):
             )
 
         node._subquery = sa.select(columns)
+        if parent_with_test is not None:
+            node._custom_subquery = sa.select(columns)
 
         if from_obj is not None:
             node._subquery = node._subquery.select_from(
                 from_obj
             )
+        if custom_from_obj is not None:
+            node._custom_subquery = node._custom_subquery.select_from(
+                custom_from_obj
+            )
 
         sqlalchemy.sql.expression.or_()
 
         if node.relationship.test == True:
-            if node._filters:
+            #node.children[0]._subquery
+
+            #for fromItem in node._subquery.froms:
+                #fromItem.isouter = False
+
+            #change_chidlren_to_inner_joins(node)
+
+            if len(node._filters) > 0:
                 current_foreign_key = None
                 for f_key in node._filters[0].left.foreign_keys:
                     current_foreign_key = f_key
                     break
 
                 same_foreign_keys = []
-                for foreign_key in node._filters[0].left.table.foreign_keys:
-                    if foreign_key.target_fullname == current_foreign_key.target_fullname:
-                        same_foreign_keys.append(
-                            sqlalchemy.sql.column(foreign_key.parent.name) == node._filters[0].right.value
-                        )
+
+                if current_foreign_key is not None:
+                    for foreign_key in node._filters[0].left.table.foreign_keys:
+                        if foreign_key.target_fullname == current_foreign_key.target_fullname:
+                            same_foreign_keys.append(
+                                sqlalchemy.sql.column(foreign_key.parent.name) == node._filters[0].right.value
+                            )
+                else:
+                    same_foreign_keys.append(
+                        sa.and_(*node._filters)
+                    )
 
                 node._subquery = node._subquery.where(
                     sa.or_(*same_foreign_keys)
                 )
+                """node._custom_subquery = node._custom_subquery.where(
+                    sa.or_(*same_foreign_keys)
+                )"""
             elif len(children_with_conditions) > 0:
                 children_with_conditions_queries = []
                 for child_with_condition in children_with_conditions:
-                    child_with_condition._subquery = child_with_condition._subquery.element.where(
-                        sqlalchemy.sql.column(child_with_condition.relationship.foreign_key.parent[0]) == sqlalchemy.sql.column(child_with_condition.relationship.foreign_key.child[0])
-                    )
+                    parent = child_with_condition.parent
+                    child = child_with_condition
 
-                    children_with_conditions_queries.append(
+                    parent_column_name = child_with_condition.relationship.foreign_key.parent[0]
+                    child_column_name = child_with_condition.relationship.foreign_key.child[0]
+
+                    """child_with_condition._subquery = child_with_condition._subquery.element.where(
+                        parent.model.c.get(parent_column_name) == child.model.c.get(child_column_name))"""
+                    child_with_condition._custom_subquery = child_with_condition._custom_subquery.where(
+                        parent.model.c.get(parent_column_name) == child.model.c.get(child_column_name))
+
+                    """children_with_conditions_queries.append(
                         sqlalchemy.exists(child_with_condition._subquery)
+                    )"""
+                    children_with_conditions_queries.append(
+                        sqlalchemy.exists(child_with_condition._custom_subquery)
                     )
 
                 node._subquery = node._subquery.where(
                     sa.or_(*children_with_conditions_queries)
                 )
+                """node._custom_subquery = node._custom_subquery.where(
+                    sa.or_(*children_with_conditions_queries)
+                )"""
 
+        #TODO: ak ma parent (rekurzivne) test flag, tak sa nemoze aplikovat WHERE podmienka
         if node._filters and node.relationship.test is not True:
-            node._subquery = node._subquery.where(
-                sa.and_(*node._filters)
-            )
+            if parent_with_test is None:
+                node._subquery = node._subquery.where(
+                    sa.and_(*node._filters)
+                )
+            else:
+                node._custom_subquery = node._custom_subquery.where(
+                    sa.and_(*node._filters)
+                )
 
         if node.relationship.type == ONE_TO_MANY:
             node._subquery = node._subquery.group_by(
@@ -829,12 +892,25 @@ class QueryBuilder(object):
                     ) for key in foreign_key_columns
                 ]
             )
+            if custom_from_obj is not None:
+                node._custom_subquery = node._custom_subquery.group_by(
+                    *[
+                        getattr(
+                            node.model.c,
+                            key,
+                        ) for key in foreign_key_columns
+                    ]
+                )
 
         node._subquery = node._subquery.alias()
+
+        """if custom_from_obj is not None:
+            node._custom_subquery = node._custom_subquery.alias()"""
 
     def build_queries(self, node):
         """Build node query."""
         self.from_obj = None
+        self.custom_from_obj = None
 
         # 1) add all child columns from one level below
         self._children(node)

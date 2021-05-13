@@ -171,6 +171,7 @@ class Node(object):
 
         self.relationship = Relationship(kwargs.get('relationship'))
         self._subquery = None
+        self._custom_subquery = None
         self._filters = []
         self._mapping = {}
 
