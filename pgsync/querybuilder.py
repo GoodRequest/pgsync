@@ -604,13 +604,12 @@ class QueryBuilder(object):
 
         children_with_conditions = []
 
-        if (node.relationship.test is True):
-            print('')
-
         parent_with_test = has_test_parent(node)
 
         for child in node.children:
             onclause = []
+
+            parent_with_test2 = has_test_parent(child)
 
             foreign_keys = self._get_foreign_keys(node, child)
 
@@ -694,13 +693,62 @@ class QueryBuilder(object):
                 isouter=isouter,
             )
 
-            if parent_with_test is not None:
+            if parent_with_test2 is not None:
+                onclause2 = []
+
+                for i in range(len(foreign_key_columns)):
+                    onclause2.append(
+                        getattr(
+                            child._custom_subquery.c,
+                            foreign_key_columns[i],
+                        ) == getattr(
+                            node.model.c,
+                            foreign_keys[node.name][i],
+                        )
+                    )
+
+                if child._filters:
+                    self.isouter = False
+
+                    for _filter in child._filters:
+                        if isinstance(_filter, sa.sql.elements.BinaryExpression):
+                            for column in _filter._orig:
+                                if hasattr(column, 'value'):
+                                    _column = child._custom_subquery.c
+                                    if column._orig_key in node.table_columns:
+                                        _column = node.model.c
+                                    if hasattr(_column, column._orig_key):
+                                        onclause2.append(
+                                            getattr(
+                                                _column,
+                                                column._orig_key,
+                                            ) == column.value
+                                        )
+                        elif isinstance(
+                            _filter,
+                            sa.sql.elements.BooleanClauseList,
+                        ):
+                            for clause in _filter.clauses:
+
+                                for column in clause._orig:
+                                    if hasattr(column, 'value'):
+                                        _column = child._custom_subquery.c
+                                        if column._orig_key in node.table_columns:
+                                            _column = node.model.c
+                                        if hasattr(_column, column._orig_key):
+                                            onclause2.append(
+                                                getattr(
+                                                    _column,
+                                                    column._orig_key,
+                                                ) == column.value
+                                            )
+
                 if custom_from_obj is None:
                     custom_from_obj = node.model
 
                 custom_from_obj = custom_from_obj.join(
                     child._custom_subquery,
-                    onclause=sa.and_(*onclause),
+                    onclause=sa.and_(*onclause2),
                     isouter=custom_is_outer,
                 )
 
@@ -804,12 +852,16 @@ class QueryBuilder(object):
             node._subquery = node._subquery.select_from(
                 from_obj
             )
-        if custom_from_obj is not None:
+        if node._custom_subquery is not None and custom_from_obj is not None:
             node._custom_subquery = node._custom_subquery.select_from(
                 custom_from_obj
             )
+            items = []
+            for col in node._custom_subquery._raw_columns:
+                if not isinstance(col, sa.sql.expression.Label):
+                    items.append(col)
 
-        sqlalchemy.sql.expression.or_()
+            node._custom_subquery._raw_columns = items
 
         if node.relationship.test == True:
             #node.children[0]._subquery
@@ -855,7 +907,7 @@ class QueryBuilder(object):
 
                     """child_with_condition._subquery = child_with_condition._subquery.element.where(
                         parent.model.c.get(parent_column_name) == child.model.c.get(child_column_name))"""
-                    child_with_condition._custom_subquery = child_with_condition._custom_subquery.where(
+                    child_with_condition._custom_subquery = child_with_condition._custom_subquery.element.where(
                         parent.model.c.get(parent_column_name) == child.model.c.get(child_column_name))
 
                     """children_with_conditions_queries.append(
@@ -892,7 +944,7 @@ class QueryBuilder(object):
                     ) for key in foreign_key_columns
                 ]
             )
-            if custom_from_obj is not None:
+            if node._custom_subquery is not None:
                 node._custom_subquery = node._custom_subquery.group_by(
                     *[
                         getattr(
@@ -904,8 +956,8 @@ class QueryBuilder(object):
 
         node._subquery = node._subquery.alias()
 
-        """if custom_from_obj is not None:
-            node._custom_subquery = node._custom_subquery.alias()"""
+        if node._custom_subquery is not None:
+            node._custom_subquery = node._custom_subquery.alias()
 
     def build_queries(self, node):
         """Build node query."""
