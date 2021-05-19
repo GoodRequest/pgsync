@@ -80,3 +80,4 @@ urllib3==1.26.4
     #   requests
 zipp==3.4.1
     # via importlib-metadata
+sentry_sdk==0.10.2
