@@ -13,8 +13,7 @@ import sentry_sdk
 SENTRY_DNS = env.str('SENTRY_DNS', default=None)
 
 if SENTRY_DNS is not None:
-    print('sentry')
-    sentry_sdk.init()
+    sentry_sdk.init(SENTRY_DNS)
 
 if __name__ == '__main__':
     sync.main()
