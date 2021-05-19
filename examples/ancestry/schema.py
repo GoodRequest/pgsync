@@ -12,59 +12,47 @@ Base = declarative_base()
 
 
 class Parent(Base):
-    __tablename__ = 'parent'
+    __tablename__ = "parent"
     __table_args__ = ()
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String)
 
 
 class Surrogate(Base):
-    __tablename__ = 'surrogate'
+    __tablename__ = "surrogate"
     __table_args__ = ()
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String)
-    parent_id = sa.Column(
-        sa.Integer,
-        sa.ForeignKey(Parent.id),
-    )
+    parent_id = sa.Column(sa.Integer, sa.ForeignKey(Parent.id))
 
 
 class Child(Base):
-    __tablename__ = 'child'
+    __tablename__ = "child"
     __table_args__ = ()
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String)
-    surrogate_id = sa.Column(
-        sa.Integer,
-        sa.ForeignKey(Surrogate.id),
-    )
+    parent_id = sa.Column(sa.Integer, sa.ForeignKey(Surrogate.id))
 
 
 class GrandChild(Base):
-    __tablename__ = 'grand_child'
+    __tablename__ = "grand_child"
     __table_args__ = ()
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String)
-    child_id = sa.Column(
-        sa.Integer,
-        sa.ForeignKey(Child.id),
-    )
+    parent_id = sa.Column(sa.Integer, sa.ForeignKey(Child.id))
 
 
 class GreatGrandChild(Base):
-    __tablename__ = 'great_grand_child'
+    __tablename__ = "great_grand_child"
     __table_args__ = ()
     id = sa.Column(sa.Integer, primary_key=True, autoincrement=True)
     name = sa.Column(sa.String)
-    grand_child_id = sa.Column(
-        sa.Integer,
-        sa.ForeignKey(GrandChild.id),
-    )
+    parent_id = sa.Column(sa.Integer, sa.ForeignKey(GrandChild.id))
 
 
 def setup(config=None):
     for document in json.load(open(config)):
-        database = document.get('database', document['index'])
+        database = document.get("database", document["index"])
         create_database(database)
         engine = pg_engine(database=database)
         Base.metadata.drop_all(engine)
@@ -73,9 +61,9 @@ def setup(config=None):
 
 @click.command()
 @click.option(
-    '--config',
-    '-c',
-    help='Schema config',
+    "--config",
+    "-c",
+    help="Schema config",
     type=click.Path(exists=True),
 )
 def main(config):
@@ -85,5 +73,5 @@ def main(config):
     setup(config)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

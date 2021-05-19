@@ -27,8 +27,8 @@ class QueryBuilder(object):
 
     def _get_foreign_keys(self, node_a, node_b):
         if (
-            node_a.relationship.through_tables or
-            node_b.relationship.through_tables
+            node_a.relationship.through_tables
+            or node_b.relationship.through_tables
         ):
 
             if node_a.relationship.through_tables:
@@ -87,18 +87,18 @@ class QueryBuilder(object):
                     return foreign_keys[table]
         else:
             # only return the intersection of columns that match
-            if not table.startswith(f'{schema}.'):
-                table = f'{schema}.{table}'
+            if not table.startswith(f"{schema}."):
+                table = f"{schema}.{table}"
             for i, value in enumerate(foreign_keys[table]):
                 if value not in columns:
                     foreign_keys[table].pop(i)
             return foreign_keys[table]
 
         msg = (
-            f'No keys for columns: {columns} and foreign_keys: {foreign_keys}'
+            f"No keys for columns: {columns} and foreign_keys: {foreign_keys}"
         )
         if table:
-            msg += f' with table {table}'
+            msg += f" with table {table}"
         raise FetchColumnForeignKeysError(msg)
 
     def _get_child_keys(self, node, params):
@@ -111,14 +111,12 @@ class QueryBuilder(object):
         )
         for child in node.children:
             if (
-                not child.parent.relationship.through_tables and
-                child.parent.relationship.type == ONE_TO_MANY
+                not child.parent.relationship.through_tables
+                and child.parent.relationship.type == ONE_TO_MANY
             ):
                 row = row.concat(
                     sa.cast(
-                        sa.func.JSON_AGG(
-                            child._subquery.c._keys
-                        ),
+                        sa.func.JSON_AGG(child._subquery.c._keys),
                         sa.dialects.postgresql.JSONB,
                     )
                 )
@@ -129,35 +127,30 @@ class QueryBuilder(object):
                         sa.dialects.postgresql.JSONB,
                     )
                 )
-        return row.label('_keys')
+        return row.label("_keys")
 
     def _root(self, node):
         columns = [
             sa.func.JSON_BUILD_ARRAY(
                 *[
-                    child._subquery.c._keys for child in node.children
+                    child._subquery.c._keys
+                    for child in node.children
                     if hasattr(
                         child._subquery.c,
-                        '_keys',
+                        "_keys",
                     )
                 ]
             ),
-            sa.func.JSON_BUILD_OBJECT(
-                *node.columns
-            ),
+            sa.func.JSON_BUILD_OBJECT(*node.columns),
             *node.primary_keys,
         ]
         node._subquery = sa.select(columns)
 
         if self.from_obj is not None:
-            node._subquery = node._subquery.select_from(
-                self.from_obj
-            )
+            node._subquery = node._subquery.select_from(self.from_obj)
 
         if node._filters:
-            node._subquery = node._subquery.where(
-                sa.and_(*node._filters)
-            )
+            node._subquery = node._subquery.where(sa.and_(*node._filters))
         node._subquery = node._subquery.alias()
 
     def _children(self, node):
@@ -198,7 +191,8 @@ class QueryBuilder(object):
                         getattr(
                             child._subquery.c,
                             left_foreign_keys[i],
-                        ) == getattr(
+                        )
+                        == getattr(
                             child.parent.model.c,
                             right_foreign_keys[i],
                         )
@@ -232,7 +226,8 @@ class QueryBuilder(object):
                         getattr(
                             child._subquery.c,
                             left_foreign_keys[i],
-                        ) == getattr(
+                        )
+                        == getattr(
                             child.parent.model.c,
                             right_foreign_keys[i],
                         )
@@ -247,7 +242,7 @@ class QueryBuilder(object):
                     if isinstance(_filter, sa.sql.elements.BinaryExpression):
 
                         for column in _filter._orig:
-                            if hasattr(column, 'value'):
+                            if hasattr(column, "value"):
                                 _column = child._subquery.c
                                 if column._orig_key in node.table_columns:
                                     _column = node.model.c
@@ -256,7 +251,8 @@ class QueryBuilder(object):
                                         getattr(
                                             _column,
                                             column._orig_key,
-                                        ) == column.value
+                                        )
+                                        == column.value
                                     )
                     elif isinstance(
                         _filter,
@@ -265,7 +261,7 @@ class QueryBuilder(object):
                         for clause in _filter.clauses:
 
                             for column in clause._orig:
-                                if hasattr(column, 'value'):
+                                if hasattr(column, "value"):
                                     _column = child._subquery.c
                                     if column._orig_key in node.table_columns:
                                         _column = node.model.c
@@ -274,10 +270,11 @@ class QueryBuilder(object):
                                             getattr(
                                                 _column,
                                                 column._orig_key,
-                                            ) == column.value
+                                            )
+                                            == column.value
                                         )
                 if self.verbose:
-                    compiled_query(child._subquery, 'child._subquery')
+                    compiled_query(child._subquery, "child._subquery")
 
             op = sa.and_
             if child.table == child.parent.table:
@@ -320,25 +317,18 @@ class QueryBuilder(object):
                             node.model.c,
                             foreign_key_column,
                         )
-                    )
+                    ),
                 )
             )
 
         _keys = self._get_child_keys(
-            node,
-            sa.func.JSON_BUILD_ARRAY(
-                 *params
-            ).label('_keys')
+            node, sa.func.JSON_BUILD_ARRAY(*params).label("_keys")
         )
 
         columns = [_keys]
         # We need to include through keys and the actual keys
         if node.relationship.variant == SCALAR:
-            columns.append(
-                node.columns[1].label(
-                    'anon'
-                )
-            )
+            columns.append(node.columns[1].label("anon"))
         elif node.relationship.variant == OBJECT:
 
             if node.relationship.type == ONE_TO_ONE:
@@ -348,27 +338,26 @@ class QueryBuilder(object):
                         sa.func.JSON_BUILD_OBJECT(
                             node.columns[0],
                             node.columns[1],
-                        ).label('anon')
+                        ).label("anon")
                     )
                 else:
                     columns.append(
-                        sa.func.JSON_BUILD_OBJECT(
-                            *node.columns
-                        ).label('anon')
+                        sa.func.JSON_BUILD_OBJECT(*node.columns).label("anon")
                     )
             elif node.relationship.type == ONE_TO_MANY:
                 columns.append(
-                    sa.func.JSON_BUILD_OBJECT(
-                        *node.columns
-                    ).label('anon')
+                    sa.func.JSON_BUILD_OBJECT(*node.columns).label("anon")
                 )
 
-        columns.extend([
-            getattr(
-                node.model.c,
-                foreign_key_column,
-            ) for foreign_key_column in foreign_key_columns
-        ])
+        columns.extend(
+            [
+                getattr(
+                    node.model.c,
+                    foreign_key_column,
+                )
+                for foreign_key_column in foreign_key_columns
+            ]
+        )
 
         from_obj = None
 
@@ -415,7 +404,8 @@ class QueryBuilder(object):
                     getattr(
                         child._subquery.c,
                         left_foreign_keys[i],
-                    ) == getattr(
+                    )
+                    == getattr(
                         child.parent.model.c,
                         right_foreign_keys[i],
                     )
@@ -431,7 +421,7 @@ class QueryBuilder(object):
                     if isinstance(_filter, sa.sql.elements.BinaryExpression):
 
                         for column in _filter._orig:
-                            if hasattr(column, 'value'):
+                            if hasattr(column, "value"):
                                 _column = child._subquery.c
                                 if column._orig_key in node.table_columns:
                                     _column = node.model.c
@@ -443,7 +433,8 @@ class QueryBuilder(object):
                                         getattr(
                                             _column,
                                             column._orig_key,
-                                        ) == column.value
+                                        )
+                                        == column.value
                                     )
                     elif isinstance(
                         _filter,
@@ -452,7 +443,7 @@ class QueryBuilder(object):
                         for clause in _filter.clauses:
 
                             for column in clause._orig:
-                                if hasattr(column, 'value'):
+                                if hasattr(column, "value"):
                                     _column = child._subquery.c
                                     if column._orig_key in node.table_columns:
                                         _column = node.model.c
@@ -461,7 +452,8 @@ class QueryBuilder(object):
                                             getattr(
                                                 _column,
                                                 column._orig_key,
-                                            ) == column.value
+                                            )
+                                            == column.value
                                         )
 
             from_obj = from_obj.join(
@@ -472,19 +464,15 @@ class QueryBuilder(object):
 
         outer_subquery = sa.select(columns)
         if node._filters:
-            outer_subquery = outer_subquery.where(
-                sa.and_(*node._filters)
-            )
+            outer_subquery = outer_subquery.where(sa.and_(*node._filters))
 
         if from_obj is not None:
-            outer_subquery = outer_subquery.select_from(
-                from_obj
-            )
+            outer_subquery = outer_subquery.select_from(from_obj)
 
         outer_subquery = outer_subquery.alias()
 
         if self.verbose:
-            compiled_query(outer_subquery, 'Outer subquery')
+            compiled_query(outer_subquery, "Outer subquery")
 
         params = []
         for primary_key in through.model.primary_keys:
@@ -496,18 +484,16 @@ class QueryBuilder(object):
                             through.model.c,
                             primary_key,
                         )
-                    )
+                    ),
                 )
             )
 
         through_keys = sa.cast(
             sa.func.JSON_BUILD_OBJECT(
                 node.relationship.through_tables[0],
-                sa.func.JSON_BUILD_ARRAY(
-                    *params
-                )
+                sa.func.JSON_BUILD_ARRAY(*params),
             ),
-            sa.dialects.postgresql.JSONB
+            sa.dialects.postgresql.JSONB,
         )
 
         # book author through table
@@ -515,10 +501,8 @@ class QueryBuilder(object):
             sa.cast(
                 outer_subquery.c._keys,
                 sa.dialects.postgresql.JSONB,
-            ).concat(
-                through_keys
-            )
-        ).label('_keys')
+            ).concat(through_keys)
+        ).label("_keys")
 
         left_foreign_keys = foreign_keys[node.name]
         right_foreign_keys = self._get_column_foreign_keys(
@@ -530,22 +514,18 @@ class QueryBuilder(object):
 
         columns = [
             _keys,
-            sa.func.JSON_AGG(
-                outer_subquery.c.anon
-            ).label(node.label)
+            sa.func.JSON_AGG(outer_subquery.c.anon).label(node.label),
         ]
 
         foreign_keys = get_foreign_keys(node.parent, through)
 
         for column in foreign_keys[through.name]:
-            columns.append(
-                getattr(through.model.c, column)
-            )
+            columns.append(getattr(through.model.c, column))
 
         inner_subquery = sa.select(columns)
 
         if self.verbose:
-            compiled_query(inner_subquery, 'Inner subquery')
+            compiled_query(inner_subquery, "Inner subquery")
 
         onclause = []
         for i in range(len(left_foreign_keys)):
@@ -553,7 +533,8 @@ class QueryBuilder(object):
                 getattr(
                     outer_subquery.c,
                     left_foreign_keys[i],
-                ) == getattr(
+                )
+                == getattr(
                     through.model.c,
                     right_foreign_keys[i],
                 )
@@ -572,29 +553,22 @@ class QueryBuilder(object):
             isouter=self.isouter,
         )
 
-        subquery = inner_subquery.select_from(
-            from_obj
-        )
+        subquery = inner_subquery.select_from(from_obj)
         if node._filters:
-            subquery = subquery.where(
-                sa.and_(
-                    *node._filters
-                )
-            )
+            subquery = subquery.where(sa.and_(*node._filters))
 
         subquery = subquery.group_by(
             *[
                 getattr(
                     through.model.c,
                     column,
-                ) for column in foreign_keys[
-                    through.name
-                ]
+                )
+                for column in foreign_keys[through.name]
             ]
         )
 
         if self.verbose:
-            compiled_query(subquery, 'Combined subquery')
+            compiled_query(subquery, "Combined subquery")
 
         node._subquery = subquery.alias()
 
@@ -623,7 +597,8 @@ class QueryBuilder(object):
                     getattr(
                         child._subquery.c,
                         foreign_key_columns[i],
-                    ) == getattr(
+                    )
+                    == getattr(
                         node.model.c,
                         foreign_keys[node.name][i],
                     )
@@ -638,7 +613,7 @@ class QueryBuilder(object):
                 for _filter in child._filters:
                     if isinstance(_filter, sa.sql.elements.BinaryExpression):
                         for column in _filter._orig:
-                            if hasattr(column, 'value'):
+                            if hasattr(column, "value"):
                                 _column = child._subquery.c
                                 if column._orig_key in node.table_columns:
                                     _column = node.model.c
@@ -647,7 +622,8 @@ class QueryBuilder(object):
                                         getattr(
                                             _column,
                                             column._orig_key,
-                                        ) == column.value
+                                        )
+                                        == column.value
                                     )
                     elif isinstance(
                         _filter,
@@ -656,7 +632,7 @@ class QueryBuilder(object):
                         for clause in _filter.clauses:
 
                             for column in clause._orig:
-                                if hasattr(column, 'value'):
+                                if hasattr(column, "value"):
                                     _column = child._subquery.c
                                     if column._orig_key in node.table_columns:
                                         _column = node.model.c
@@ -665,7 +641,8 @@ class QueryBuilder(object):
                                             getattr(
                                                 _column,
                                                 column._orig_key,
-                                            ) == column.value
+                                            )
+                                            == column.value
                                         )
 
             # TODO: presunut dole
@@ -764,40 +741,36 @@ class QueryBuilder(object):
         params = []
         if node.parent.is_root:
             for primary_key in node.primary_keys:
-                params.extend([
-                    str(primary_key.name),
-                    sa.func.JSON_BUILD_ARRAY(
+                params.extend(
+                    [
+                        str(primary_key.name),
+                        sa.func.JSON_BUILD_ARRAY(
+                            getattr(
+                                node.model.c,
+                                primary_key.name,
+                            )
+                        ),
+                    ]
+                )
+        else:
+            for primary_key in node.primary_keys:
+                params.extend(
+                    [
+                        str(primary_key.name),
                         getattr(
                             node.model.c,
                             primary_key.name,
-                        )
-                    )
-                ])
-        else:
-            for primary_key in node.primary_keys:
-                params.extend([
-                    str(primary_key.name),
-                    getattr(
-                        node.model.c,
-                        primary_key.name,
-                    )
-                ])
+                        ),
+                    ]
+                )
 
         if node.relationship.type == ONE_TO_ONE:
             _keys = self._get_child_keys(
-                node,
-                sa.func.JSON_BUILD_OBJECT(
-                    *params
-                )
+                node, sa.func.JSON_BUILD_OBJECT(*params)
             )
         elif node.relationship.type == ONE_TO_MANY:
             _keys = self._get_child_keys(
-                node,
-                sa.func.JSON_AGG(
-                    sa.func.JSON_BUILD_OBJECT(
-                        *params
-                    )
-                )
+                node, sa.func.JSON_AGG(sa.func.JSON_BUILD_OBJECT(*params))
             )
 
         columns = [_keys]
@@ -823,16 +796,12 @@ class QueryBuilder(object):
         elif node.relationship.variant == OBJECT:
             if node.relationship.type == ONE_TO_ONE:
                 columns.append(
-                    sa.func.JSON_BUILD_OBJECT(
-                        *node.columns
-                    ).label(node.label)
+                    sa.func.JSON_BUILD_OBJECT(*node.columns).label(node.label)
                 )
             elif node.relationship.type == ONE_TO_MANY:
                 columns.append(
                     sa.func.JSON_AGG(
-                        sa.func.JSON_BUILD_OBJECT(
-                            *node.columns
-                        )
+                        sa.func.JSON_BUILD_OBJECT(*node.columns)
                     ).label(node.label)
                 )
 
@@ -941,7 +910,8 @@ class QueryBuilder(object):
                     getattr(
                         node.model.c,
                         key,
-                    ) for key in foreign_key_columns
+                    )
+                    for key in foreign_key_columns
                 ]
             )
             if node._custom_subquery is not None:

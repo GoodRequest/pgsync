@@ -5,7 +5,7 @@ from pgsync.base import Base
 from pgsync.trigger import CREATE_TRIGGER_TEMPLATE
 
 
-@pytest.mark.usefixtures('table_creator')
+@pytest.mark.usefixtures("table_creator")
 class TestTrigger(object):
     """Trigger tests."""
 
@@ -18,44 +18,47 @@ DECLARE
   new_row JSON;
   notification JSON;
   xmin BIGINT;
-
-  primary_keys TEXT [] := (
-      SELECT primary_keys
-      FROM _pkey_view
-      WHERE table_name = TG_TABLE_NAME
-  );
-  foreign_keys TEXT [] := (
-      SELECT foreign_keys
-      FROM _fkey_view
-      WHERE table_name = TG_TABLE_NAME
-  );
+  _primary_keys TEXT [];
+  _foreign_keys TEXT [];
 
 BEGIN
     -- database is also the channel name.
     channel := CURRENT_DATABASE();
 
     IF TG_OP = 'DELETE' THEN
+
+        SELECT primary_keys
+        INTO _primary_keys
+        FROM _view
+        WHERE table_name = TG_TABLE_NAME;
+
         old_row = ROW_TO_JSON(OLD);
         old_row := (
             SELECT JSONB_OBJECT_AGG(key, value)
             FROM JSON_EACH(old_row)
-            WHERE key = ANY(primary_keys)
+            WHERE key = ANY(_primary_keys)
         );
         xmin := OLD.xmin;
     ELSE
         IF TG_OP <> 'TRUNCATE' THEN
+
+            SELECT primary_keys, foreign_keys
+            INTO _primary_keys, _foreign_keys
+            FROM _view
+            WHERE table_name = TG_TABLE_NAME;
+
             new_row = ROW_TO_JSON(NEW);
             new_row := (
                 SELECT JSONB_OBJECT_AGG(key, value)
                 FROM JSON_EACH(new_row)
-                WHERE key = ANY(primary_keys || foreign_keys)
+                WHERE key = ANY(_primary_keys || _foreign_keys)
             );
             IF TG_OP = 'UPDATE' THEN
                 old_row = ROW_TO_JSON(OLD);
                 old_row := (
                     SELECT JSONB_OBJECT_AGG(key, value)
                     FROM JSON_EACH(old_row)
-                    WHERE key = ANY(primary_keys || foreign_keys)
+                    WHERE key = ANY(_primary_keys || _foreign_keys)
                 );
             END IF;
             xmin := NEW.xmin;
@@ -84,15 +87,15 @@ $$ LANGUAGE plpgsql;
 
     def test_trigger_primary_key_function(self, connection):
         tables = {
-            'book': ['isbn'],
-            'publisher': ['id'],
-            'book_language': ['id'],
-            'author': ['id'],
-            'language': ['id'],
-            'subject': ['id'],
-            'city': ['id'],
-            'country': ['id'],
-            'continent': ['id'],
+            "book": ["isbn"],
+            "publisher": ["id"],
+            "book_language": ["id"],
+            "author": ["id"],
+            "language": ["id"],
+            "subject": ["id"],
+            "city": ["id"],
+            "country": ["id"],
+            "continent": ["id"],
         }
         pg_base = Base(connection.engine.url.database)
         for table_name, primary_keys in tables.items():
@@ -102,20 +105,20 @@ $$ LANGUAGE plpgsql;
                 f"JOIN pg_attribute ON attrelid = indrelid AND attnum = ANY(indkey) "
                 f"WHERE indrelid = '{table_name}'::regclass AND indisprimary"
             )
-            rows = pg_base.query(query)[0]
+            rows = pg_base.fetchall(query)[0]
             assert list(rows)[0] == primary_keys
 
     def test_trigger_foreign_key_function(self, connection):
         tables = {
-            'book': ['publisher_id'],
-            'publisher': None,
-            'book_language': ['book_isbn', 'language_id'],
-            'author': ['city_id'],
-            'language': None,
-            'subject': None,
-            'city': ['country_id'],
-            'country': ['continent_id'],
-            'continent': None,
+            "book": ["publisher_id"],
+            "publisher": None,
+            "book_language": ["book_isbn", "language_id"],
+            "author": ["city_id"],
+            "language": None,
+            "subject": None,
+            "city": ["country_id"],
+            "country": ["continent_id"],
+            "continent": None,
         }
         pg_base = Base(connection.engine.url.database)
         for table_name, foreign_keys in tables.items():
@@ -124,5 +127,5 @@ $$ LANGUAGE plpgsql;
                 f"WHERE constraint_catalog=current_catalog AND "
                 f"table_name='{table_name}' AND position_in_unique_constraint NOTNULL "
             )
-            rows = pg_base.query(query)[0]
+            rows = pg_base.fetchall(query)[0]
             assert rows[0] == foreign_keys

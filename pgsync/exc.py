@@ -6,6 +6,7 @@ class RelationshipTypeError(Exception):
     This error is raised if the relationship type is none of
     "One to one", "One to many" or "Many to Many"
     """
+
     def __init__(self, value):
         self.value = value
 
@@ -18,6 +19,7 @@ class RelationshipVariantError(Exception):
     This error is raised if the relationship variant is not one of
     "Scalar" or "Object"
     """
+
     def __init__(self, value):
         self.value = value
 
@@ -30,6 +32,7 @@ class RelationshipForeignKeyError(Exception):
     This error is raised if the relationship foreign key is not one of
     "Child" or "Parent"
     """
+
     def __init__(self, value):
         self.value = value
 
@@ -42,17 +45,7 @@ class RelationshipAttributeError(Exception):
     This error is raised if the relationship attribute is not one of
     "type" or "variant"
     """
-    def __init__(self, value):
-        self.value = value
 
-    def __str__(self):
-        return repr(self.value)
-
-
-class LabelError(Exception):
-    """
-    This error is raised if the label is invalid
-    """
     def __init__(self, value):
         self.value = value
 
@@ -61,7 +54,6 @@ class LabelError(Exception):
 
 
 class TableNotFoundError(Exception):
-
     def __init__(self, value):
         self.value = value
 
@@ -70,7 +62,6 @@ class TableNotFoundError(Exception):
 
 
 class TableNotInNodeError(Exception):
-
     def __init__(self, value):
         self.value = value
 
@@ -79,7 +70,6 @@ class TableNotInNodeError(Exception):
 
 
 class InvalidSchemaError(Exception):
-
     def __init__(self, value):
         self.value = value
 
@@ -88,7 +78,6 @@ class InvalidSchemaError(Exception):
 
 
 class NodeAttributeError(Exception):
-
     def __init__(self, value):
         self.value = value
 
@@ -97,16 +86,6 @@ class NodeAttributeError(Exception):
 
 
 class ColumnNotFoundError(Exception):
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
-
-
-class ColumnNotSpecifiedError(Exception):
-
     def __init__(self, value):
         self.value = value
 
@@ -115,7 +94,6 @@ class ColumnNotSpecifiedError(Exception):
 
 
 class ForeignKeyError(Exception):
-
     def __init__(self, value):
         self.value = value
 
@@ -124,31 +102,6 @@ class ForeignKeyError(Exception):
 
 
 class RelationshipError(Exception):
-
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
-
-
-class IndexError(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
-
-
-class DocTypeError(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
-
-
-class MultipleForeignKeysError(Exception):
     def __init__(self, value):
         self.value = value
 
@@ -173,14 +126,6 @@ class SuperUserError(Exception):
 
 
 class SchemaError(Exception):
-    def __init__(self, value):
-        self.value = value
-
-    def __str__(self):
-        return repr(self.value)
-
-
-class CompositeKeyError(Exception):
     def __init__(self, value):
         self.value = value
 
