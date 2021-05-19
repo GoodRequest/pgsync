@@ -3,5 +3,17 @@
 """PGSync runtime."""
 from pgsync import sync
 
+from environs import Env
+
+env = Env()
+env.read_env()
+
+import sentry_sdk
+
+SENTRY_DNS = env.str('SENTRY_DNS', default=None)
+
+if SENTRY_DNS is not None:
+    sentry_sdk.init(SENTRY_DNS)
+
 if __name__ == '__main__':
     sync.main()

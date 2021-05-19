@@ -191,3 +191,32 @@ def get_config(config=None):
     if not os.path.exists(config):
         raise IOError(f'Schema config "{config}" not found')
     return config
+
+def find_filters(current_node):
+    if len(current_node._filters) > 0:
+        return current_node
+
+    for child in current_node.children:
+        if child._filters and len(child._filters) > 0:
+            return child
+        elif len(child.children) > 0:
+            return find_filters(child)
+
+def has_test_parent(current_node):
+    if current_node is not None and current_node.parent is not None and current_node.parent.relationship.test is True:
+        return current_node.parent
+    else:
+        if current_node is not None and current_node.is_root is not True:
+            return has_test_parent(current_node.parent)
+
+def change_chidlren_to_inner_joins(current_node):
+    for child in current_node.children:
+        if hasattr(child._subquery, "froms"):
+            for fromItem in child._subquery.froms:
+                fromItem.isouter = False
+        elif hasattr(child._subquery, "element") and hasattr(child._subquery.element, "froms"):
+            for fromItem in child._subquery.element.froms:
+                fromItem.isouter = False
+
+        if len(child.children) > 0:
+            return change_chidlren_to_inner_joins(child)

@@ -37,6 +37,7 @@ RELATIONSHIP_ATTRIBUTES = [
     'through_tables',
     'type',
     'variant',
+    'test'
 ]
 
 # Relationship foreign keys

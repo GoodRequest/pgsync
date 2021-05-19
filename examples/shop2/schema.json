@@ -1,0 +1,204 @@
+[
+	{
+		"database": "shop2",
+		"index": "products",
+		"nodes": {
+			"table": "products",
+			"label": "products",
+			"schema": "public",
+			"columns": [
+				"id"
+			],
+			"children": [
+				{
+					"table": "product_categories",
+					"label": "productCategory",
+					"columns": [
+						"id"
+					],
+					"relationship": {
+						"variant": "object",
+						"type": "one_to_one",
+                        "foreign_key": {
+                            "parent": ["productCategoryID"],
+                            "child": ["id"]
+                        }
+					},
+					"children": [
+						{
+							"table": "service_product_categories",
+							"label": "serviceProductCategories",
+							"columns": [
+								"productCategoryID",
+								"sellerID",
+								"sellerServiceID",
+                                "renterOneID",
+								"renterTwoID",
+								"renterServiceID"
+							],
+							"relationship": {
+								"variant": "object",
+								"type": "one_to_many",
+                                "foreign_key": {
+                                    "parent": ["id"],
+                                    "child": ["productCategoryID"]
+                                },
+                                "test": true
+                            },
+							"children": [
+								{
+									"table": "sellers",
+									"label": "seller",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one",
+                                        "foreign_key": {
+                                            "parent": ["sellerID"],
+                                            "child": ["id"]
+                                        }
+									}
+								},
+								{
+									"table": "services",
+									"label": "saleService",
+									"columns": [
+										"id",
+										"name"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one",
+                                        "foreign_key": {
+                                            "parent": ["sellerServiceID"],
+                                            "child": ["id"]
+                                        }
+									},
+                                    "children": [
+                                        {
+                                            "table": "service_items",
+                                            "label": "serviceItems",
+                                            "columns": [
+                                                "id",
+                                                "name"
+                                            ],
+                                            "relationship": {
+                                                "variant": "object",
+                                                "type": "one_to_many",
+                                                "foreign_key": {
+                                                    "parent": ["id"],
+                                                    "child": ["serviceID"]
+                                                }
+                                            },
+                                            "children": [
+                                                {
+                                                    "table": "price_items",
+                                                    "label": "priceItems",
+                                                    "columns": [
+                                                        "id",
+                                                        "name"
+                                                    ],
+                                                    "relationship": {
+                                                        "variant": "object",
+                                                        "type": "one_to_many",
+                                                        "foreign_key": {
+                                                            "parent": ["id"],
+                                                            "child": ["serviceItemID"]
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ]
+								},
+                                {
+									"table": "renters",
+									"label": "renterOne",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one",
+                                        "foreign_key": {
+                                            "parent": ["renterOneID"],
+                                            "child": ["id"]
+                                        }
+									}
+								},
+								{
+									"table": "renters",
+									"label": "renterTwo",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one",
+                                        "foreign_key": {
+                                            "parent": ["renterTwoID"],
+                                            "child": ["id"]
+                                        }
+									}
+								},
+								{
+									"table": "services",
+									"label": "renterService",
+									"columns": [
+										"id"
+									],
+									"relationship": {
+										"variant": "object",
+										"type": "one_to_one",
+                                        "foreign_key": {
+                                            "parent": ["renterServiceID"],
+                                            "child": ["id"]
+                                        }
+									},
+                                    "children": [
+                                        {
+                                            "table": "service_items",
+                                            "label": "serviceItems",
+                                            "columns": [
+                                                "id",
+                                                "name"
+                                            ],
+                                            "relationship": {
+                                                "variant": "object",
+                                                "type": "one_to_many",
+                                                "foreign_key": {
+                                                    "parent": ["id"],
+                                                    "child": ["serviceID"]
+                                                }
+                                            },
+                                            "children": [
+                                                {
+                                                    "table": "price_items",
+                                                    "label": "priceItems",
+                                                    "columns": [
+                                                        "id",
+                                                        "name"
+                                                    ],
+                                                    "relationship": {
+                                                        "variant": "object",
+                                                        "type": "one_to_many",
+                                                        "foreign_key": {
+                                                            "parent": ["id"],
+                                                            "child": ["serviceItemID"]
+                                                        }
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    ]
+								}
+							]
+						}
+					]
+				}
+			]
+		}
+	}
+]

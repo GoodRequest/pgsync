@@ -89,6 +89,7 @@ class Relationship(object):
         self.variant = _safe_get(relationship, 'variant')
         self.through_tables = relationship.get('through_tables', [])
         self.foreign_key = ForeignKey(relationship.get('foreign_key'))
+        self.test = relationship.get("test")
 
     def __str__(self):
         return (
@@ -170,6 +171,7 @@ class Node(object):
 
         self.relationship = Relationship(kwargs.get('relationship'))
         self._subquery = None
+        self._custom_subquery = None
         self._filters = []
         self._mapping = {}
 
