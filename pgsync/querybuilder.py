@@ -841,7 +841,8 @@ class QueryBuilder(object):
             #change_chidlren_to_inner_joins(node)
 
             if len(node._filters) > 0:
-                current_foreign_key = None
+                '''NOTE: this code is for scenario when table has two children reference on the same table'''
+                ''' current_foreign_key = None
                 for f_key in node._filters[0].left.foreign_keys:
                     current_foreign_key = f_key
                     break
@@ -861,10 +862,12 @@ class QueryBuilder(object):
 
                 node._subquery = node._subquery.where(
                     sa.or_(*same_foreign_keys)
+                )'''
+
+                node._subquery = node._subquery.where(
+                    sa.and_(*node._filters)
                 )
-                """node._custom_subquery = node._custom_subquery.where(
-                    sa.or_(*same_foreign_keys)
-                )"""
+
             elif len(children_with_conditions) > 0:
                 children_with_conditions_queries = []
                 for child_with_condition in children_with_conditions:
@@ -874,14 +877,9 @@ class QueryBuilder(object):
                     parent_column_name = child_with_condition.relationship.foreign_key.parent[0]
                     child_column_name = child_with_condition.relationship.foreign_key.child[0]
 
-                    """child_with_condition._subquery = child_with_condition._subquery.element.where(
-                        parent.model.c.get(parent_column_name) == child.model.c.get(child_column_name))"""
                     child_with_condition._custom_subquery = child_with_condition._custom_subquery.element.where(
                         parent.model.c.get(parent_column_name) == child.model.c.get(child_column_name))
 
-                    """children_with_conditions_queries.append(
-                        sqlalchemy.exists(child_with_condition._subquery)
-                    )"""
                     children_with_conditions_queries.append(
                         sqlalchemy.exists(child_with_condition._custom_subquery)
                     )
@@ -889,9 +887,6 @@ class QueryBuilder(object):
                 node._subquery = node._subquery.where(
                     sa.or_(*children_with_conditions_queries)
                 )
-                """node._custom_subquery = node._custom_subquery.where(
-                    sa.or_(*children_with_conditions_queries)
-                )"""
 
         #TODO: ak ma parent (rekurzivne) test flag, tak sa nemoze aplikovat WHERE podmienka
         if node._filters and node.relationship.test is not True:
